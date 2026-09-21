@@ -1,0 +1,65 @@
+openapi: 3.0.3
+info:
+  title: Link Shortener
+  version: 0.1.0
+paths:
+  /api/links:
+    post:
+      summary: Create a short link
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [url]
+              properties:
+                url: { type: string, maxLength: 2048, description: http or https only, no private hosts }
+                alias: { type: string, pattern: '^[A-Za-z0-9_-]{3,32}$' }
+                ttlSeconds: { type: integer, minimum: 1, maximum: 31536000 }
+      responses:
+        '201': { description: Created, content: { application/json: { schema: { $ref: '#/components/schemas/Link' } } } }
+        '400': { description: Invalid input }
+        '409': { description: Alias already taken }
+        '413': { description: Body too large }
+        '429': { description: Rate limited, headers: { Retry-After: { schema: { type: integer } } } }
+  /{code}:
+    get:
+      summary: Redirect to the original url (counts a click)
+      parameters: [{ name: code, in: path, required: true, schema: { type: string } }]
+      responses:
+        '302': { description: Redirect, headers: { Location: { schema: { type: string } } } }
+        '404': { description: Unknown code }
+        '410': { description: Link has expired }
+  /api/links/{code}/stats:
+    get:
+      summary: Click analytics for a link
+      parameters: [{ name: code, in: path, required: true, schema: { type: string } }]
+      responses:
+        '200': { description: OK, content: { application/json: { schema: { $ref: '#/components/schemas/Link' } } } }
+        '404': { description: Unknown code }
+  /api/links/{code}:
+    delete:
+      summary: Delete a link
+      parameters: [{ name: code, in: path, required: true, schema: { type: string } }]
+      responses:
+        '204': { description: Deleted }
+        '404': { description: Unknown code }
+  /health:
+    get:
+      summary: Liveness check (not rate limited)
+      responses:
+        '200': { description: OK }
+components:
+  schemas:
+    Link:
+      type: object
+      properties:
+        code: { type: string }
+        shortUrl: { type: string }
+        url: { type: string }
+        createdAt: { type: integer, description: epoch ms }
+        expiresAt: { type: integer, nullable: true }
+        clicks: { type: integer }
+        lastClickedAt: { type: integer, nullable: true }
+        clicksByDay: { type: object, additionalProperties: { type: integer }, description: 'UTC date -> clicks' }

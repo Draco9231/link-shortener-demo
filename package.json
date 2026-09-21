@@ -1,0 +1,15 @@
+{
+  "name": "link-shortener-demo",
+  "version": "0.1.0",
+  "description": "Small URL shortener plus a stateful, governed workflow engine that runs three SDLC scenarios.",
+  "type": "module",
+  "private": true,
+  "engines": { "node": ">=20" },
+  "scripts": {
+    "start": "node src/index.js",
+    "test": "node --test \"test/**/*.test.js\"",
+    "scenario:greenfield": "node src/orchestrator/cli.js greenfield",
+    "scenario:brownfield": "node src/orchestrator/cli.js brownfield",
+    "scenario:ambiguous": "node src/orchestrator/cli.js ambiguous"
+  }
+}
